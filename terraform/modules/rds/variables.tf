@@ -18,9 +18,9 @@ variable "allowed_security_group_ids" {
 }
 
 variable "instance_class" {
-  description = "Cheapest general-purpose burstable class (Graviton) - great for low traffic"
+  description = "Cheap Instance Class"
   type        = string
-  default     = "db.t4g.micro"
+  default     = "db.t3.micro"
 }
 
 variable "allocated_storage" {

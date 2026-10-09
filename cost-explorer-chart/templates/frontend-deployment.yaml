@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ .Values.frontendDeploymentName }}
-  namespace: {{ .Values.frontendNamespaceName }}  
+  namespace: {{ .Values.frontendNamespaceName }}
   labels:
     app: {{ .Values.frontendImageName }}
 spec:
@@ -16,18 +16,15 @@ spec:
         app: {{ .Values.frontendImageName }}
     spec:
       containers:
-      - name: {{ .Values.frontendImageName }}
-        image: {{ .Values.frontendImage }}
-        imagePullPolicy: IfNotPresent
-        resources:
-          requests:
-            memory: {{ .Values.frontendRequests.memory | quote }}
-            cpu: {{ .Values.frontendRequests.cpu | quote }}
-          limits:
-            memory: {{ .Values.frontendLimits.memory | quote }}
-            cpu: {{ .Values.frontendLimits.cpu | quote }}
-        ports:
-        - containerPort: 80
-        
-
-
+        - name: {{ .Values.frontendImageName }}
+          image: {{ .Values.frontendImage }}
+          imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              memory: {{ .Values.frontendRequests.memory | quote }}
+              cpu: {{ .Values.frontendRequests.cpu | quote }}
+            limits:
+              memory: {{ .Values.frontendLimits.memory | quote }}
+              cpu: {{ .Values.frontendLimits.cpu | quote }}
+          ports:
+            - containerPort: 80

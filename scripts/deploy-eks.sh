@@ -30,7 +30,12 @@ set -a
 source .env
 set +a
 
+# On EKS the backend connects as the IAM-auth DB role, not the master user from .env (RDS doesn't allow IAM auth for the master user)
+POSTGRES_USER=$(terraform -chdir=terraform output -raw postgres_app_username)
+export POSTGRES_USER
+
 # Build and push the Docker images to ECR, then deploy to EKS using Skaffold
+echo "Deploying to EKS cluster '$CLUSTER_NAME' in region '$REGION'..."
 skaffold run -p eks --default-repo="$ECR_REGISTRY"
 
 # Run ./scripts/update-dns.sh afterwards to point the domain at the frontend's LB.

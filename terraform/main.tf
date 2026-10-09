@@ -62,7 +62,7 @@ module "eks" {
   name       = "kubernetes-cluster-metrics"
   vpc_id     = module.vpc.vpc_id
   subnet_ids = module.vpc.private_subnet_ids
-  
+
   depends_on = [module.vpc]
 }
 
@@ -241,4 +241,54 @@ resource "helm_release" "metrics_server" {
   namespace  = "kube-system"
 
   depends_on = [module.eks]
+}
+
+# Prometheus + Grafana 
+resource "helm_release" "kube_prometheus_stack" {
+  name             = "kube-prometheus-stack"
+  repository       = "https://prometheus-community.github.io/helm-charts"
+  chart            = "kube-prometheus-stack"
+  version          = "92.2.0"
+  namespace        = "monitoring"
+  create_namespace = true
+
+  values = [yamlencode({
+    alertmanager = { enabled = false }
+
+    prometheus = {
+      prometheusSpec = {
+        retention = "2d" # Retain 2 days of data
+        # Pick up ServiceMonitors from any release,
+        # not only the ones labelled for this release.
+        serviceMonitorSelectorNilUsesHelmValues = false
+        podMonitorSelectorNilUsesHelmValues     = false
+      }
+    }
+
+    # EKS manages the control plane, so these components can't be scraped and
+    # would only show up as permanently "down" targets.
+    kubeControllerManager = { enabled = false }
+    kubeScheduler         = { enabled = false }
+    kubeEtcd              = { enabled = false }
+    kubeProxy             = { enabled = false }
+  })]
+
+  depends_on = [module.eks]
+}
+
+# Custom Grafana dashboard, kept in git so it survives Grafana restarts and cluster re-creations. 
+resource "kubernetes_config_map" "grafana_cluster_dashboard" {
+  metadata {
+    name      = "grafana-cluster-dashboard"
+    namespace = "monitoring"
+    labels = {
+      grafana_dashboard = "1"
+    }
+  }
+
+  data = {
+    "cluster-dashboard.json" = file("${path.module}/../monitoring/dashboards/cluster-dashboard.json")
+  }
+
+  depends_on = [helm_release.kube_prometheus_stack]
 }
