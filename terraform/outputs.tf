@@ -39,3 +39,6 @@ output "route53_zone_id" {
 output "acm_certificate_arn" {
   value = module.route53.certificate_arn
 }
+output "postgres_app_username" {
+  value = var.postgres_app_username
+}

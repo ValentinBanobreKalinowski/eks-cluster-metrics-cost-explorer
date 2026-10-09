@@ -61,6 +61,7 @@ profiles:
             setValueTemplates:
               # POSTGRES_USER must be the IAM-mapped DB role (var.postgres_app_username)
               backendPostgresUser: "{{.POSTGRES_USER}}"
+              backendPostgresPassword: "{{.POSTGRES_PASSWORD}}"
               backendPostgresDb: "{{.POSTGRES_DB}}"
               backendImage: "{{.IMAGE_FULLY_QUALIFIED_cost_explorer_backend}}"
               frontendImage: "{{.IMAGE_FULLY_QUALIFIED_cost_explorer_frontend}}"
@@ -70,6 +71,7 @@ profiles:
               frontendCertArn: "{{.FRONTEND_CERT_ARN}}"
             setValues:
               frontendServiceType: LoadBalancer
+              backendServiceName: cost-explorer-backend-service
               deployInClusterPostgres: "false" # Use RDS instead of in-cluster Postgres
               backendPostgresSsl: "true" # RDS enforces SSL
               backendPostgresIamAuth: "true" # Short-lived IAM token auth via IRSA instead of a static password

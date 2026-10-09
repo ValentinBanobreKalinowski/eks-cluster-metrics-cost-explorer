@@ -7,6 +7,8 @@
 ![Kubernetes](https://img.shields.io/badge/kubernetes-%23326CE5.svg?style=for-the-badge&logo=kubernetes&logoColor=white)
 ![Terraform](https://img.shields.io/badge/terraform-%235835CC.svg?style=for-the-badge&logo=terraform&logoColor=white)
 ![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)
+![Prometheus](https://img.shields.io/badge/Prometheus-E6522C?style=for-the-badge&logo=Prometheus&logoColor=white)
+![Grafana](https://img.shields.io/badge/grafana-%23F46800.svg?style=for-the-badge&logo=grafana&logoColor=white)
 
 
 </div>
@@ -36,6 +38,15 @@ A dashboard that tracks per-namespace resource usage and estimated cost across a
 
 ![Cluster diagram](docs/cluster.svg)
 
+### Monitoring
+- `kube-prometheus-stack` (Prometheus, Grafana, node-exporter, kube-state-metrics) in its own `monitoring` namespace, installed by Terraform
+- Custom Grafana dashboard kept in git ([monitoring/dashboards/cluster-dashboard.json](monitoring/dashboards/cluster-dashboard.json)) and auto-loaded on every deploy: worker nodes, running pods, cluster CPU/memory, and backend/frontend HPA replicas over time
+- Grafana is not exposed publicly, only reachable via `kubectl port-forward`
+
+The dashboard during a load test, with both HPAs scaling up.
+
+![Grafana dashboard](docs/Grafana.png)
+
 
 ## Key Design Decisions
 
@@ -60,5 +71,9 @@ A dashboard that tracks per-namespace resource usage and estimated cost across a
 2. `./scripts/deploy-all.sh` — provisions the infra with Terraform, then builds/pushes images to ECR and deploys via Skaffold.
 3. `./scripts/update-dns.sh` — points the domain at the frontend's load balancer once it's up.
 4. Visit `https://<app_hostname>`.
+5. Grafana: `kubectl port-forward svc/kube-prometheus-stack-grafana 3000:80 -n monitoring`, then open http://localhost:3000 and log in as `admin` with the password from:
+   ```
+   kubectl get secret kube-prometheus-stack-grafana -n monitoring -o jsonpath='{.data.admin-password}' | base64 -d
+   ```
 
 To tear everything down: `./scripts/destroy-all.sh`.
