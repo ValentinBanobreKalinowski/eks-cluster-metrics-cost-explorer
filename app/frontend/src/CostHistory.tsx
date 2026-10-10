@@ -77,6 +77,8 @@ function bucketSeries(rows: CostSnapshotRow[], nowMs: number, mode: RangeMode): 
 
 function CostHistory() {
   const [rows, setRows] = useState<CostSnapshotRow[] | null>(null);
+  // "now" for bucketing, captured when rows arrive (Date.now() can't be called during render)
+  const [fetchedAtMs, setFetchedAtMs] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [rangeMode, setRangeMode] = useState<RangeMode>('1m');
   const [namespaceFilter, setNamespaceFilter] = useState<string>('all');
@@ -92,6 +94,7 @@ function CostHistory() {
           } else {
             setError(null);
             setRows(json);
+            setFetchedAtMs(Date.now());
           }
         })
         .catch((err) => setError(err.message));
@@ -132,16 +135,15 @@ function CostHistory() {
 
   const series: Series[] = useMemo(() => {
     if (!rows) return [];
-    const nowMs = Date.now();
     const visibleNamespaces = namespaceFilter === 'all' ? namespaces : [namespaceFilter];
 
     return visibleNamespaces.map((namespace) => {
       const namespaceRows = rows.filter((r) => r.namespace === namespace);
-      const points = bucketSeries(namespaceRows, nowMs, rangeMode);
+      const points = bucketSeries(namespaceRows, fetchedAtMs, rangeMode);
       const average = points.length === 0 ? 0 : points.reduce((sum, p) => sum + p.cost, 0) / points.length;
       return { namespace, color: namespaceColors[namespace], points, average };
     });
-  }, [rows, rangeMode, namespaceFilter, namespaces, namespaceColors]);
+  }, [rows, fetchedAtMs, rangeMode, namespaceFilter, namespaces, namespaceColors]);
 
   if (error) {
     return <div className="cost-history error">{error}</div>;
