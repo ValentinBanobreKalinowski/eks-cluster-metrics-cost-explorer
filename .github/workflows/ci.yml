@@ -70,7 +70,7 @@ jobs:
           cache-from: type=gha,scope=${{ matrix.app }}
           cache-to: type=gha,mode=max,scope=${{ matrix.app }}
       - name: Scan image for vulnerabilities
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.35.0
         with:
           scan-type: image
           image-ref: cost-explorer-${{ matrix.app }}:ci
@@ -91,7 +91,7 @@ jobs:
       - run: terraform init -backend=false # Downloads providers/modules without AWS credentials or state
       - run: terraform validate
       - name: Scan Terraform for misconfigurations
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.35.0
         with:
           scan-type: config
           scan-ref: terraform
