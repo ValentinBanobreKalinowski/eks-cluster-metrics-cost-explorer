@@ -1,4 +1,14 @@
 terraform {
+  # State lives in the bucket created by terraform/bootstrap, so it isn't tied to one laptop.
+  # Backend blocks can't use variables - the bucket name must match bootstrap's state_bucket_name.
+  backend "s3" {
+    bucket       = "valentin-eks-cost-explorer-tfstate"
+    key          = "main/terraform.tfstate"
+    region       = "eu-central-1"
+    encrypt      = true
+    use_lockfile = true # S3-native locking, so two applies can't run at once
+  }
+
   required_providers {
     aws = {
       source  = "hashicorp/aws"
@@ -79,17 +89,7 @@ module "rds" {
   password = var.postgres_password
 }
 
-resource "aws_ecr_repository" "backend" {
-  name                 = "cost-explorer-backend"
-  image_tag_mutability = "MUTABLE"
-  force_delete         = true
-}
-
-resource "aws_ecr_repository" "frontend" {
-  name                 = "cost-explorer-frontend"
-  image_tag_mutability = "MUTABLE"
-  force_delete         = true
-}
+# ECR repositories live in terraform/bootstrap so images survive destroy-all.sh
 
 # App namespaces - created here (not by the Helm chart) so they exist and are
 # fully established before any skaffold / helm deploy runs against the cluster.

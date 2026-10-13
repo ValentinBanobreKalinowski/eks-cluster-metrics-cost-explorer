@@ -1,0 +1,54 @@
+name: Push images
+
+# Builds both images on every merge to main and pushes them to ECR,
+# so a deploy can use an already-built, already-tested image.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "app/**"
+      - ".github/workflows/push-images.yml"
+  workflow_dispatch: # Manual "Run workflow" button
+
+concurrency:
+  group: push-images
+  cancel-in-progress: false # Never cut off a push halfway
+
+permissions:
+  contents: read
+  id-token: write # Lets the job request the OIDC token that AWS exchanges for credentials
+
+env:
+  AWS_REGION: eu-central-1
+
+jobs:
+  push:
+    name: Build + push (${{ matrix.app }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        app: [backend, frontend]
+    steps:
+      - uses: actions/checkout@v4
+
+      # No access keys: assumes the role from terraform/bootstrap using GitHub's OIDC token
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - uses: docker/setup-buildx-action@v3
+
+      # Tagged with the commit SHA (exactly what's deployed) and latest (convenience)
+      - uses: docker/build-push-action@v6
+        with:
+          context: app/${{ matrix.app }}
+          push: true
+          tags: |
+            ${{ steps.ecr.outputs.registry }}/cost-explorer-${{ matrix.app }}:${{ github.sha }}
+            ${{ steps.ecr.outputs.registry }}/cost-explorer-${{ matrix.app }}:latest
+          cache-from: type=gha,scope=${{ matrix.app }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.app }}

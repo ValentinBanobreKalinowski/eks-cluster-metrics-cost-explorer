@@ -72,6 +72,8 @@ The dashboard during a load test, with both HPAs scaling up.
 
 ### AWS (EKS)
 
+**One-time setup:** `terraform -chdir=terraform/bootstrap init && terraform -chdir=terraform/bootstrap apply`. This creates the long-lived resources that survive teardown: the S3 bucket for Terraform state, the ECR repositories, and the IAM role GitHub Actions assumes via OIDC. Set the `github_actions_role_arn` output as the `AWS_ROLE_ARN` repository variable in GitHub.
+
 1. Fill in `.env` with Postgres credentials, `TF_VAR_domain_name`, and `TF_VAR_app_hostname` (a domain you own, registered in Route53).
 2. `./scripts/deploy-all.sh` — provisions the infra with Terraform, then builds/pushes images to ECR and deploys via Skaffold.
 3. `./scripts/update-dns.sh` — points the domain at the frontend's load balancer once it's up.

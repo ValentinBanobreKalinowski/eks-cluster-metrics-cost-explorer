@@ -90,6 +90,9 @@ jobs:
       - run: terraform fmt -check -recursive
       - run: terraform init -backend=false # Downloads providers/modules without AWS credentials or state
       - run: terraform validate
+      - name: Validate bootstrap stack
+        working-directory: terraform/bootstrap
+        run: terraform init -backend=false && terraform validate
       - name: Scan Terraform for misconfigurations
         uses: aquasecurity/trivy-action@v0.35.0
         with:
